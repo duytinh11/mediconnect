@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfileController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +27,17 @@ Route::post('/register', [AuthController::class, 'register']);
 // Đăng nhập tài khoản
 Route::post('/login', [AuthController::class, 'login']);
 
+// Password reset
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink']);
+Route::post('/password/reset', [PasswordResetController::class, 'reset']);
+
 // Các route yêu cầu đã đăng nhập (bảo vệ bằng Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
     // Đăng xuất
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Update profile
+    Route::put('/profile', [ProfileController::class, 'update']);
 
     // (Tuỳ chọn) Kiểm tra token còn hiệu lực không
     Route::get('/me', function (\Illuminate\Http\Request $request) {

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -19,20 +20,23 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'role' => 'patient', // Mặc định khi đăng ký mới
-        ]);
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => strtolower($data['email']),
+                'phone' => $data['phone'],
+                'password' => Hash::make($data['password']),
+                'role' => 'patient',
+            ]);
 
-        // Tạo bản ghi Patient tương ứng
-        $user->patient()->create([
-            'address' => $data['address'],
-            'gender' => $data['gender'] ?? null,
-            'dob' => $data['dob'] ?? null,
-        ]);
+            $user->patient()->create([
+                'address' => $data['address'],
+                'gender' => $data['gender'] ?? null,
+                'dob' => $data['dob'] ?? null,
+            ]);
+
+            return $user;
+        });
 
         $token = $user->createToken('spa')->plainTextToken;
 
