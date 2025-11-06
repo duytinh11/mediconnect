@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Đây là nơi định nghĩa các route cho API.
+| Mặc định, những route này được load thông qua RouteServiceProvider
+| và tất cả đều có prefix "/api" trong URL (ví dụ: /api/login, /api/register).
+|
+*/
+
+/**
+ * 🧾 Auth Routes (FR1, FR4, FR8)
+ */
+
+// Đăng ký tài khoản mới
+Route::post('/register', [AuthController::class, 'register']);
+
+// Đăng nhập tài khoản
+Route::post('/login', [AuthController::class, 'login']);
+
+// Các route yêu cầu đã đăng nhập (bảo vệ bằng Sanctum)
+Route::middleware('auth:sanctum')->group(function () {
+    // Đăng xuất
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // (Tuỳ chọn) Kiểm tra token còn hiệu lực không
+    Route::get('/me', function (\Illuminate\Http\Request $request) {
+        return response()->json([
+            'user' => $request->user()->load(['doctor', 'patient'])
+        ]);
+    });
+});
