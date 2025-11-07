@@ -20,6 +20,7 @@ return new class extends Migration
         $table->string('degrees')->nullable();
         $table->text('bio')->nullable();
         $table->json('available_slots')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
     });
 }

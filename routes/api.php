@@ -1,48 +1,55 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\CityController;
+use App\Http\Controllers\Api\Admin\ContentController;
+use App\Http\Controllers\Api\Admin\DoctorAdminController;
+use App\Http\Controllers\Api\Admin\PatientAdminController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DoctorSearchController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
-use Illuminate\Http\Request;
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Đây là nơi định nghĩa các route cho API.
-| Mặc định, những route này được load thông qua RouteServiceProvider
-| và tất cả đều có prefix "/api" trong URL (ví dụ: /api/login, /api/register).
-|
-*/
+use Illuminate\Support\Facades\Route;
 
 /**
- * 🧾 Auth Routes (FR1, FR4, FR8)
+ * Public auth routes
  */
-
-// Đăng ký tài khoản mới
 Route::post('/register', [AuthController::class, 'register']);
-
-// Đăng nhập tài khoản
 Route::post('/login', [AuthController::class, 'login']);
-
-// Password reset
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink']);
 Route::post('/password/reset', [PasswordResetController::class, 'reset']);
 
-// Các route yêu cầu đã đăng nhập (bảo vệ bằng Sanctum)
-Route::middleware('auth:sanctum')->group(function () {
-    // Đăng xuất
-    Route::post('/logout', [AuthController::class, 'logout']);
+/**
+ * Public doctor search/listing
+ */
+Route::get('/doctors', [DoctorSearchController::class, 'index']);
+Route::get('/doctors/{doctor}', [DoctorSearchController::class, 'show']);
 
-    // Update profile
+/**
+ * Authenticated routes
+ */
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    // (Tuỳ chọn) Kiểm tra token còn hiệu lực không
+    Route::apiResource('appointments', AppointmentController::class)
+        ->only(['index', 'store', 'show', 'update', 'destroy'])
+        ->middleware('role:patient,doctor,admin');
+
     Route::get('/me', function (\Illuminate\Http\Request $request) {
         return response()->json([
-            'user' => $request->user()->load(['doctor', 'patient'])
+            'user' => $request->user()->load(['doctor', 'patient']),
         ]);
+    });
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::apiResource('cities', CityController::class);
+        Route::apiResource('doctors', DoctorAdminController::class);
+        Route::apiResource('patients', PatientAdminController::class);
+        Route::apiResource('contents', ContentController::class);
     });
 });

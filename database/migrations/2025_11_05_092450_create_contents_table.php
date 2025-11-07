@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('contents', function (Blueprint $table) {
             $table->id();
+            $table->string('title');
+            $table->string('category');
+            $table->text('body');
+            $table->string('image_path')->nullable();
+            $table->boolean('published')->default(false);
+            $table->foreignId('author_id')->constrained('users');
             $table->timestamps();
         });
     }

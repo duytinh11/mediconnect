@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -18,32 +20,38 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request)
     {
-        $data = $request->validated();
-
-        $user = DB::transaction(function () use ($data) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => strtolower($data['email']),
-                'phone' => $data['phone'],
-                'password' => Hash::make($data['password']),
-                'role' => 'patient',
+        return $this->wrap(function () use ($request) {
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
             ]);
 
-            $user->patient()->create([
-                'address' => $data['address'],
-                'gender' => $data['gender'] ?? null,
-                'dob' => $data['dob'] ?? null,
-            ]);
+            $user = DB::transaction(function () use ($data) {
+                $user = User::create([
+                    'name' => $data['name'],
+                    'email' => strtolower($data['email']),
+                    'phone' => $data['phone'],
+                    'password' => Hash::make($data['password']),
+                    'role' => 'patient',
+                ]);
 
-            return $user;
+                $user->patient()->create([
+                    'address' => $data['address'],
+                    'gender' => $data['gender'] ?? null,
+                    'dob' => $data['dob'] ?? null,
+                ]);
+
+                return $user;
+            });
+
+            $token = $user->createToken('spa')->plainTextToken;
+
+            return response()->json([
+                'user' => $user->load('patient'),
+                'token' => $token,
+            ], 201);
         });
-
-        $token = $user->createToken('spa')->plainTextToken;
-
-        return response()->json([
-            'user' => $user->load('patient'),
-            'token' => $token,
-        ], 201);
     }
 
     /**

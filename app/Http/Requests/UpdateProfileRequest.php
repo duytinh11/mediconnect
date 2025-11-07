@@ -26,6 +26,12 @@ class UpdateProfileRequest extends FormRequest
             'address' => 'sometimes|string|max:255',
             'gender' => 'sometimes|nullable|in:male,female,other',
             'dob' => 'sometimes|nullable|date',
+            'specialty' => 'sometimes|string|max:255',
+            'degrees' => 'sometimes|nullable|string|max:255',
+            'bio' => 'sometimes|nullable|string',
+            'license_number' => 'sometimes|nullable|string|max:50',
+            'available_slots' => 'sometimes|array',
+            'city_id' => 'sometimes|nullable|exists:cities,id',
         ];
     }
 }
